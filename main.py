@@ -30,6 +30,11 @@ class User(BaseModel):
     city: str
     email: str
 
+class UserUpdate(BaseModel):
+    name: str
+    city: str
+    email: str
+
 @app.get("/hello") # http://localhost:8000/hello GET
 def index():
     return { "message": "Hello World" }
@@ -55,4 +60,26 @@ def get_user_by_id(user_id: int):
 
 @app.post("/users")
 def create_user(user: User):
+    users.update({user.id: dict(user)})
     return { "message": "New user", "data": user }
+
+@app.put("/users/{user_id}")
+def update_user(user_id: int, user: UserUpdate):
+    if user_id not in users.keys():
+        return { "message": "Invalid user id" }
+
+    updated_user = users.get(user_id)
+    updated_user.update({ "city": user.city })
+    updated_user.update({ "email": user.email })
+    updated_user.update({ "name": user.name })
+    users.update({ user_id: updated_user })
+
+    return { "message": "User details updated successfully", "data": updated_user }
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int):
+    if user_id not in users.keys():
+        return { "message": "Invalid user id"}
+    
+    del users[user_id]
+    return { "message": "User deleted successfully" }
