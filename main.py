@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from pydantic import BaseModel
+from typing import Annotated
 
 app = FastAPI()
 
@@ -47,12 +48,12 @@ def test():
     return { "message": "Test API", "total": c }
 
 @app.get("/users")
-def get_users(city: str = None):
+def get_users(x_api_key: Annotated[str, Header()], city: str = None):
     if city is None:
-        return { "message": "Users list", "data": list(users.values()) }
+        return { "message": "Users list", "data": list(users.values()), "header": x_api_key }
     
     filtered_users = [user for user in users.values() if user.get('city').lower() == city.lower()]
-    return { "message": "Users list", "data": filtered_users }
+    return { "message": "Users list", "data": filtered_users, "header": x_api_key }
 
 @app.get("/users/{user_id}") # GET baseUrl/users/1
 def get_user_by_id(user_id: int):
