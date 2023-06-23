@@ -16,3 +16,9 @@
   - www-x-urlencoded-data
   - raw
     - json
+
+
+## PostgreSQL Database Connection
+`pip install sqlalchemy psycopg2`
+or
+`pip install sqlalchemy psycopg2-binary`

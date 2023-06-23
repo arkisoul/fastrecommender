@@ -1,40 +1,25 @@
-from fastapi import FastAPI, Header
-from pydantic import BaseModel
-from typing import Annotated
+from fastapi import FastAPI, Header, HTTPException
+from typing import Annotated, Optional
+from sqlmodel import SQLModel, Field, create_engine, Session, update
 
 app = FastAPI()
 
-users = {
-    1: {
-        "id": 1,
-        "name": "John Doe",
-        "city": "Ahmedabad",
-        "email": "john.doe@mailinator.com"
-    },
-    2: {
-        "id": 2,
-        "name": "Jane Doe",
-        "city": "Gandhinagar",
-        "email": "jane.doe@mailinator.com"
-    },
-    3: {
-        "id": 3,
-        "name": "Jack Doe",
-        "city": "Baroda",
-        "email": "jack.doe@mailinator.com"
-    }
-}
+DATABASE_URL = 'postgresql://appuser:appuser@localhost/fastapi'
 
-class User(BaseModel):
-    id: int
+engine = create_engine(DATABASE_URL)
+
+class Users(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     city: str
     email: str
 
-class UserUpdate(BaseModel):
-    name: str
-    city: str
-    email: str
+def create_db_and_tables():
+    SQLModel.metadata.create_all(engine)
+
+@app.on_event("startup")
+def on_startup():
+    create_db_and_tables()
 
 @app.get("/hello") # http://localhost:8000/hello GET
 def index():
@@ -47,40 +32,49 @@ def test():
     c = a + b
     return { "message": "Test API", "total": c }
 
-@app.get("/users")
-def get_users(x_api_key: Annotated[str, Header()], city: str = None):
-    if city is None:
-        return { "message": "Users list", "data": list(users.values()), "header": x_api_key }
-    
-    filtered_users = [user for user in users.values() if user.get('city').lower() == city.lower()]
-    return { "message": "Users list", "data": filtered_users, "header": x_api_key }
+@app.get("/users", status_code=200)
+def get_users(x_api_key: Annotated[str | None, Header()] = None, city: str = None):
+    with Session(engine) as session:
+        users = session.query(Users).all()
+        print(f'users list {users}')
+        return { "message": "Users list", "data": users, "header": x_api_key }
 
 @app.get("/users/{user_id}") # GET baseUrl/users/1
 def get_user_by_id(user_id: int):
-    return { "message": "User detail", "data": users[user_id] }
+    with Session(engine) as session:
+        user = session.query(Users).filter(Users.id == user_id).one_or_none()
+        return { "message": "User detail", "data": user }
 
-@app.post("/users")
-def create_user(user: User):
-    users.update({user.id: dict(user)})
-    return { "message": "New user", "data": user }
+@app.post("/users", status_code=201)
+def create_user(user: Users):
+    with Session(engine) as session:
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return { "message": "New user", "data": user }
 
 @app.put("/users/{user_id}")
-def update_user(user_id: int, user: UserUpdate):
-    if user_id not in users.keys():
-        return { "message": "Invalid user id" }
-
-    updated_user = users.get(user_id)
-    updated_user.update({ "city": user.city })
-    updated_user.update({ "email": user.email })
-    updated_user.update({ "name": user.name })
-    users.update({ user_id: updated_user })
-
-    return { "message": "User details updated successfully", "data": updated_user }
+def update_user(user_id: int, user: Users):
+    with Session(engine) as session:
+        user_exist = session.query(Users).filter(Users.id == user_id).one_or_none()
+        if not user_exist:
+            raise HTTPException(404, 'Invalid user id')
+        
+        user_exist.name = user.name
+        user_exist.city = user.city
+        user_exist.email = user.email
+        session.add(user_exist)
+        session.commit()
+        session.refresh(user_exist)
+        return { "message": "User updated successfully", "data": user_exist }
 
 @app.delete("/users/{user_id}")
 def delete_user(user_id: int):
-    if user_id not in users.keys():
-        return { "message": "Invalid user id"}
-    
-    del users[user_id]
-    return { "message": "User deleted successfully" }
+    with Session(engine) as session:
+        user_exist = session.query(Users).filter(Users.id == user_id).one_or_none()
+        if not user_exist:
+            raise HTTPException(404, 'Invalid user id')
+        
+        session.delete(user_exist)
+        session.commit()
+        return { "message": "User deleted successfully", "data": user_exist }
