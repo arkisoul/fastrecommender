@@ -13,12 +13,12 @@
 - Headers
 - Request Body
   - form-data
-  - www-x-urlencoded-data
+  - x-www-urlencoded-data
   - raw
     - json
 
 
 ## PostgreSQL Database Connection
-`pip install sqlalchemy psycopg2`
+`pip install sqlmodel psycopg2`
 or
-`pip install sqlalchemy psycopg2-binary`
+`pip install sqlmodel psycopg2-binary`
