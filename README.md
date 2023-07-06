@@ -22,3 +22,10 @@
 `pip install sqlmodel psycopg2`
 or
 `pip install sqlmodel psycopg2-binary`
+
+## Containerization
+- One container for our fastapi app
+- One container for postgres
+- One container for pgadmin
+
+pip freeze > requirements.txt
