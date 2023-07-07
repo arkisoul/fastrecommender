@@ -11,7 +11,7 @@ app = FastAPI()
 
 # postgresql://<username>:<password>@localhost/<databasename>
 # create user username with encrypted password 'password'
-DATABASE_URL = 'postgresql://appuser:appuser@localhost/fastapi'
+DATABASE_URL = 'postgresql://fastdev:fastdev@pgsql/fastapi'
 
 engine = create_engine(DATABASE_URL)
 
@@ -30,7 +30,7 @@ def on_startup():
 
 @app.get("/hello") # http://localhost:8000/hello GET
 def index():
-    return { "message": "Hello World" }
+    return { "message": "Hello World from Docker Container" }
 
 @app.get("/test") # http://localhost:8000/test GET
 def test():
@@ -85,13 +85,7 @@ def delete_user(user_id: int):
         session.commit()
         return { "message": "User deleted successfully", "data": user_exist }
 
-#user_item_matrix_norm = pd.read_csv(r"./user_item_matrix_norm.csv")
-#item_similarity = pd.read_csv(r"./item_similarity.csv")
-data=pd.read_csv(r"./ratings.csv")
-data=data.drop(columns='timestamp',axis=1)
-df2=data.drop(['rating','userId'],axis=1) 
-df2=df2.drop_duplicates(subset='movieId')
-movie=pd.read_csv(r"./ratings.csv")
+movie=pd.read_csv(r"./src/ratings.csv")
 movie.head()
 movie=movie.drop('timestamp',axis=1)
 

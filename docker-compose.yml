@@ -1,0 +1,41 @@
+version: "3.7"
+
+networks:
+  fast:
+    external: false
+    driver: bridge
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: fastapi:latest
+    container_name: api
+    volumes:
+      - "./src:/usr/src/app/src"
+    ports:
+      - 8080:8000
+    networks:
+      - fast
+  pgsql:
+    image: postgres:alpine
+    container_name: pgsql
+    environment:
+      - POSTGRES_DB=fastapi
+      - POSTGRES_USER=fastdev
+      - POSTGRES_PASSWORD=fastdev
+    ports:
+      - "5432:5432"
+    networks:
+      - fast
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: fast.admin@pgadmin.io
+      PGADMIN_DEFAULT_PASSWORD: fast!123
+    networks:
+      - fast
+    ports:
+      - "5050:80"
